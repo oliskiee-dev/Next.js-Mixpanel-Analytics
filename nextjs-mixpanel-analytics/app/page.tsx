@@ -1,14 +1,97 @@
 'use client';
 
 import Image from "next/image";
+import { useMixpanel } from "@/hooks/useMixpanel";
+import { useState } from "react";
 
 export default function Home() {
-  // Function to handle smooth scrolling
+  const { track } = useMixpanel();
+  const [formData, setFormData] = useState({
+    name: '',
+    email: '',
+    message: ''
+  });
+
+  // Function to handle smooth scrolling with tracking
   const scrollToSection = (sectionId: string) => {
+    // Track navigation click
+    track('Navigation Clicked', {
+      section: sectionId,
+      from: 'navbar',
+      timestamp: new Date().toISOString()
+    });
+
     const element = document.getElementById(sectionId);
     if (element) {
       element.scrollIntoView({ behavior: 'smooth' });
+      
+      // Track section view
+      track('Section Viewed', {
+        section: sectionId,
+        timestamp: new Date().toISOString()
+      });
     }
+  };
+
+  // Handle button clicks with tracking
+  const handleButtonClick = (buttonName: string, action: string) => {
+    track('Button Clicked', {
+      button_name: buttonName,
+      action: action,
+      section: 'hero',
+      timestamp: new Date().toISOString()
+    });
+
+    if (action === 'scroll') {
+      const targetSection = buttonName === 'Get Started' ? 'features' : 'about';
+      scrollToSection(targetSection);
+    }
+  };
+
+  // Handle feature button clicks
+  const handleFeatureClick = (featureNumber: number) => {
+    track('Feature Button Clicked', {
+      feature_number: featureNumber,
+      section: 'features',
+      timestamp: new Date().toISOString()
+    });
+  };
+
+  // Handle form input changes
+  const handleInputChange = (field: string, value: string) => {
+    setFormData(prev => ({ ...prev, [field]: value }));
+    
+    track('Form Field Changed', {
+      field: field,
+      section: 'contact',
+      timestamp: new Date().toISOString()
+    });
+  };
+
+  // Handle form submission
+  const handleFormSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    track('Contact Form Submitted', {
+      has_name: !!formData.name,
+      has_email: !!formData.email,
+      has_message: !!formData.message,
+      message_length: formData.message.length,
+      section: 'contact',
+      timestamp: new Date().toISOString()
+    });
+
+    // Handle actual form submission here
+    console.log('Form submitted:', formData);
+  };
+
+  // Handle footer link clicks
+  const handleFooterLinkClick = (linkName: string) => {
+    track('Footer Link Clicked', {
+      link_name: linkName,
+      section: 'footer',
+      timestamp: new Date().toISOString()
+    });
   };
 
   return (
@@ -68,13 +151,13 @@ export default function Home() {
           </p>
           <div className="flex gap-4 justify-center">
             <button
-              onClick={() => scrollToSection('features')}
+              onClick={() => handleButtonClick('Get Started', 'scroll')}
               className="px-6 py-3 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-all hover:scale-105"
             >
               Get Started
             </button>
             <button
-              onClick={() => scrollToSection('about')}
+              onClick={() => handleButtonClick('Learn More', 'scroll')}
               className="px-6 py-3 bg-gray-200 dark:bg-gray-700 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600 transition-all hover:scale-105"
             >
               Learn More
@@ -97,7 +180,10 @@ export default function Home() {
                 <p className="text-gray-600 dark:text-gray-300">
                   This is an amazing feature that will help you achieve your goals faster and more efficiently.
                 </p>
-                <button className="mt-4 px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 transition-colors">
+                <button 
+                  onClick={() => handleFeatureClick(feature)}
+                  className="mt-4 px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 transition-colors"
+                >
                   Learn More
                 </button>
               </div>
@@ -138,20 +224,26 @@ export default function Home() {
           <p className="text-lg text-gray-600 dark:text-gray-300 mb-8">
             Have questions or want to work with us? We'd love to hear from you.
           </p>
-          <form className="space-y-4">
+          <form className="space-y-4" onSubmit={handleFormSubmit}>
             <input
               type="text"
               placeholder="Your Name"
+              value={formData.name}
+              onChange={(e) => handleInputChange('name', e.target.value)}
               className="w-full px-4 py-3 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
             <input
               type="email"
               placeholder="Your Email"
+              value={formData.email}
+              onChange={(e) => handleInputChange('email', e.target.value)}
               className="w-full px-4 py-3 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
             <textarea
               placeholder="Your Message"
               rows={4}
+              value={formData.message}
+              onChange={(e) => handleInputChange('message', e.target.value)}
               className="w-full px-4 py-3 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
             <button
@@ -171,9 +263,36 @@ export default function Home() {
             © 2025 Your Company. All rights reserved.
           </p>
           <div className="flex justify-center gap-4 mt-4">
-            <a href="#" className="text-blue-500 hover:text-blue-600 transition-colors">Privacy Policy</a>
-            <a href="#" className="text-blue-500 hover:text-blue-600 transition-colors">Terms of Service</a>
-            <a href="#" className="text-blue-500 hover:text-blue-600 transition-colors">Contact</a>
+            <a 
+              href="#" 
+              onClick={(e) => {
+                e.preventDefault();
+                handleFooterLinkClick('Privacy Policy');
+              }}
+              className="text-blue-500 hover:text-blue-600 transition-colors"
+            >
+              Privacy Policy
+            </a>
+            <a 
+              href="#" 
+              onClick={(e) => {
+                e.preventDefault();
+                handleFooterLinkClick('Terms of Service');
+              }}
+              className="text-blue-500 hover:text-blue-600 transition-colors"
+            >
+              Terms of Service
+            </a>
+            <a 
+              href="#" 
+              onClick={(e) => {
+                e.preventDefault();
+                handleFooterLinkClick('Contact');
+              }}
+              className="text-blue-500 hover:text-blue-600 transition-colors"
+            >
+              Contact
+            </a>
           </div>
         </div>
       </footer>
