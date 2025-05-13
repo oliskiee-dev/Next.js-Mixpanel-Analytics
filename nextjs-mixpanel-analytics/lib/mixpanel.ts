@@ -60,7 +60,8 @@ export const initMixpanel = () => {
         console.log(`✅ Event listeners attached to ${document.querySelectorAll('button').length} buttons`);
       };
       
-      // Track buttons on initial page load
+      /* Track buttons on initial page load
+      This call makes the buttons get tracked from the moment the page loads */
       trackButtons();
     }
   });
