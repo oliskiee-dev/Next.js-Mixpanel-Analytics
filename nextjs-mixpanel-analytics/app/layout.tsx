@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
+import { MixpanelProvider } from "@/providers/MixpanelProvider";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -13,8 +14,15 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Next.js Scroll App",
-  description: "A simple app with buttons and smooth scrolling",
+  title: "Welcome to Our App",
+  description: "Experience the power of modern web development with smooth scrolling and interactive features",
+  keywords: "web development, smooth scrolling, interactive, modern web app",
+  authors: [{ name: "Your Company" }],
+  openGraph: {
+    title: "Welcome to Our App",
+    description: "Experience the power of modern web development with smooth scrolling and interactive features",
+    type: "website",
+  },
 };
 
 export default function RootLayout({
@@ -27,7 +35,9 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-        {children}
+        <MixpanelProvider>
+          {children}
+        </MixpanelProvider>
       </body>
     </html>
   );

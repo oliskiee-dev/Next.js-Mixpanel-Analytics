@@ -1,8 +1,18 @@
 'use client';
 
 import Image from "next/image";
+import { useState } from "react";
+import { trackFormSubmission } from "@/lib/mixpanel";
+import ScrollTracker from "@/components/ScrollTracker"; // Adjust the import path as needed
 
 export default function Home() {
+  const [formData, setFormData] = useState({
+    name: '',
+    email: '',
+    message: ''
+  });
+  const [formSubmitted, setFormSubmitted] = useState(false);
+
   // Function to handle smooth scrolling
   const scrollToSection = (sectionId: string) => {
     const element = document.getElementById(sectionId);
@@ -11,8 +21,38 @@ export default function Home() {
     }
   };
 
+  // Handle form input changes
+  const handleInputChange = (field: string, value: string) => {
+    setFormData(prev => ({ ...prev, [field]: value }));
+  };
+
+  // Handle form submission with manual tracking
+  const handleFormSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    // Track form submission
+    trackFormSubmission('contact_form', {
+      name: formData.name,
+      email: formData.email,
+      message: formData.message
+    });
+    
+    console.log('Form submitted and tracked:', formData);
+    
+    // Set form as submitted and clear form
+    setFormSubmitted(true);
+    setFormData({
+      name: '',
+      email: '',
+      message: ''
+    });
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-b from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800">
+      {/* Scroll Tracker Component */}
+      <ScrollTracker pageId="homepage" />
+      
       {/* Navigation Bar */}
       <nav className="fixed top-0 left-0 right-0 bg-white/80 dark:bg-gray-900/80 backdrop-blur-sm z-50 border-b border-gray-200 dark:border-gray-700">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -31,24 +71,32 @@ export default function Home() {
               <button
                 onClick={() => scrollToSection('hero')}
                 className="px-4 py-2 rounded-lg bg-blue-500 text-white hover:bg-blue-600 transition-colors"
+                data-section="navigation"
+                data-action="navigate_to_hero"
               >
                 Home
               </button>
               <button
                 onClick={() => scrollToSection('features')}
                 className="px-4 py-2 rounded-lg bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors"
+                data-section="navigation"
+                data-action="navigate_to_features"
               >
                 Features
               </button>
               <button
                 onClick={() => scrollToSection('about')}
                 className="px-4 py-2 rounded-lg bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors"
+                data-section="navigation"
+                data-action="navigate_to_about"
               >
                 About
               </button>
               <button
                 onClick={() => scrollToSection('contact')}
                 className="px-4 py-2 rounded-lg bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors"
+                data-section="navigation"
+                data-action="navigate_to_contact"
               >
                 Contact
               </button>
@@ -70,12 +118,16 @@ export default function Home() {
             <button
               onClick={() => scrollToSection('features')}
               className="px-6 py-3 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-all hover:scale-105"
+              data-section="hero"
+              data-action="get_started"
             >
               Get Started
             </button>
             <button
               onClick={() => scrollToSection('about')}
               className="px-6 py-3 bg-gray-200 dark:bg-gray-700 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600 transition-all hover:scale-105"
+              data-section="hero"
+              data-action="learn_more"
             >
               Learn More
             </button>
@@ -97,7 +149,11 @@ export default function Home() {
                 <p className="text-gray-600 dark:text-gray-300">
                   This is an amazing feature that will help you achieve your goals faster and more efficiently.
                 </p>
-                <button className="mt-4 px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 transition-colors">
+                <button 
+                  className="mt-4 px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 transition-colors"
+                  data-section="features"
+                  data-action={`feature_${feature}_learn_more`}
+                >
                   Learn More
                 </button>
               </div>
@@ -138,29 +194,47 @@ export default function Home() {
           <p className="text-lg text-gray-600 dark:text-gray-300 mb-8">
             Have questions or want to work with us? We'd love to hear from you.
           </p>
-          <form className="space-y-4">
+          <form id="contact_form" className="space-y-4" onSubmit={handleFormSubmit}>
             <input
               type="text"
               placeholder="Your Name"
+              value={formData.name}
+              onChange={(e) => handleInputChange('name', e.target.value)}
               className="w-full px-4 py-3 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              data-field="name"
             />
             <input
               type="email"
               placeholder="Your Email"
+              value={formData.email}
+              onChange={(e) => handleInputChange('email', e.target.value)}
               className="w-full px-4 py-3 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              data-field="email"
             />
             <textarea
               placeholder="Your Message"
               rows={4}
+              value={formData.message}
+              onChange={(e) => handleInputChange('message', e.target.value)}
               className="w-full px-4 py-3 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              data-field="message"
             />
             <button
               type="submit"
               className="w-full px-6 py-3 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
+              data-section="contact"
+              data-action="submit_form"
             >
               Send Message
             </button>
           </form>
+          
+          {/* Form submission feedback */}
+          {formSubmitted && (
+            <div className="mt-4 p-3 bg-green-100 text-green-800 rounded-lg">
+              Form submitted successfully! We'll get back to you soon.
+            </div>
+          )}
         </div>
       </section>
 
@@ -171,9 +245,39 @@ export default function Home() {
             © 2025 Your Company. All rights reserved.
           </p>
           <div className="flex justify-center gap-4 mt-4">
-            <a href="#" className="text-blue-500 hover:text-blue-600 transition-colors">Privacy Policy</a>
-            <a href="#" className="text-blue-500 hover:text-blue-600 transition-colors">Terms of Service</a>
-            <a href="#" className="text-blue-500 hover:text-blue-600 transition-colors">Contact</a>
+            <a 
+              href="#" 
+              onClick={(e) => {
+                e.preventDefault();
+              }}
+              className="text-blue-500 hover:text-blue-600 transition-colors"
+              data-section="footer"
+              data-action="privacy_policy"
+            >
+              Privacy Policy
+            </a>
+            <a 
+              href="#" 
+              onClick={(e) => {
+                e.preventDefault();
+              }}
+              className="text-blue-500 hover:text-blue-600 transition-colors"
+              data-section="footer"
+              data-action="terms_of_service"
+            >
+              Terms of Service
+            </a>
+            <a 
+              href="#" 
+              onClick={(e) => {
+                e.preventDefault();
+              }}
+              className="text-blue-500 hover:text-blue-600 transition-colors"
+              data-section="footer"
+              data-action="contact"
+            >
+              Contact
+            </a>
           </div>
         </div>
       </footer>
